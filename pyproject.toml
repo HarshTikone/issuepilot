@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "issuepilot"
+version = "0.2.0"
+description = "Self-hosted agent that investigates labelled GitHub issues in a locked-down Hermes Agent sandbox"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Harsh Mahesh Tikone"}]
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+]
+
+[project.optional-dependencies]
+app = ["cryptography>=42"]
+dev = ["ruff>=0.6", "coverage>=7.4"]
+
+[project.urls]
+Repository = "https://github.com/HarshTikone/issuepilot"
+
+[project.scripts]
+issuepilot = "issuepilot.__main__:cli"
+
+[tool.setuptools]
+packages = ["issuepilot"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+# Benchmark cases contain deliberate bugs.
+extend-exclude = ["eval/cases"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.coverage.run]
+source = ["issuepilot"]
+omit = ["issuepilot/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true

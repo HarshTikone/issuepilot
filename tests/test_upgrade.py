@@ -332,7 +332,9 @@ class StoreTests(Temp):
         restored = self.dir / "restored" / "jobs.sqlite3"
         restored.parent.mkdir()
         restore(target, restored)
-        self.assertEqual(Store(restored).jobs()[0]["number"], 5)
+        copy = Store(restored)
+        self.assertEqual(copy.jobs()[0]["number"], 5)
+        copy.close()
         with self.assertRaises(ValueError):
             restore(target, restored)
 

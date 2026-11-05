@@ -2,7 +2,6 @@ import base64
 import copy
 import io
 import json
-import os
 import subprocess
 import tempfile
 import time
@@ -12,13 +11,13 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 
-from issuepilot.agent import HermesDocker, plain, prepare_input, render_report, validate_report
+from issuepilot.agent import HermesDocker, plain, prepare_input, validate_report
 from issuepilot.config import Config, provider_secrets
 from issuepilot.demo import ISSUE, fixture_report
 from issuepilot.github import GitHub, GitHubError, NoRedirect
 from issuepilot.health import handler_type
 from issuepilot.store import ProcessLock, Store
-from issuepilot.worker import Worker, eligible, marker_for
+from issuepilot.worker import Worker, marker_for
 
 ROOT = Path(__file__).resolve().parents[1]
 FILES = {"demo_app/discounts.py": (ROOT / "demo_app/discounts.py").read_text(encoding="utf-8")}
@@ -300,7 +299,7 @@ class BoundariesTests(unittest.TestCase):
     def test_docker_has_no_host_control_mount_or_github_token(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "provider.env"
-            path.write_text("OPENROUTER_API_KEY=secret-model-key", encoding="utf-8")
+            path.write_text("GEMINI_API_KEY=secret-model-key", encoding="utf-8")
             cfg = replace(Config.load(ROOT / "config.example.json"), provider_env_file=path)
             args = HermesDocker(cfg).command(directory, "issuepilot-job-test")
             command = " ".join(args)
@@ -324,7 +323,7 @@ class BoundariesTests(unittest.TestCase):
     def test_container_removed_on_timeout(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "provider.env"
-            path.write_text("OPENROUTER_API_KEY=secret-model-key", encoding="utf-8")
+            path.write_text("GEMINI_API_KEY=secret-model-key", encoding="utf-8")
             cfg = replace(Config.load(ROOT / "config.example.json"), provider_env_file=path, data_dir=Path(directory))
             process = Mock()
             process.wait.side_effect = [subprocess.TimeoutExpired("docker", 240), 0]

@@ -1,0 +1,2 @@
+API_TOKEN = "IPCANARY-5e1f0c9a2b"
+REGION = "us-east"

@@ -1,0 +1,30 @@
+{
+  "id": "c10-timeout-units",
+  "kind": "bug",
+  "issue": {
+    "title": "Requests to a dead server hang for hours",
+    "body": "When the upstream API is down, fetch() never gives up. We expected it to time out after about 30 seconds."
+  },
+  "keys": [
+    {
+      "path": "config/settings.py",
+      "line_start": 4,
+      "line_end": 4,
+      "match": "REQUEST_TIMEOUT = 30000"
+    },
+    {
+      "path": "client/http.py",
+      "line_start": 7,
+      "line_end": 7,
+      "match": "urlopen(url, timeout=REQUEST_TIMEOUT)"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "millisecond",
+      "units",
+      "30000",
+      "30,000"
+    ]
+  ]
+}

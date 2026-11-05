@@ -1,0 +1,19 @@
+{
+  "id": "n16-crash",
+  "kind": "needs_information",
+  "issue": {
+    "title": "Crash on startup",
+    "body": "It crashed on startup this morning."
+  },
+  "question_terms": [
+    "traceback",
+    "error",
+    "log",
+    "message",
+    "version",
+    "steps",
+    "settings",
+    "environment",
+    "stack"
+  ]
+}

@@ -7,21 +7,21 @@ from .agent import render_report, validate_report
 from .store import Store
 from .worker import Worker, marker_for
 
-
 ISSUE = {"number": 1, "title": "A zero-percent discount changes the total",
          "body": "Calling apply_discount(100, 0) should return 100, but returns 90. Investigate the cause and propose tests.",
          "state": "open", "user": {"login": "HarshTikone"}, "labels": [{"name": "agent-ready"}]}
 
 
 def fixture_report():
-    return {"summary": "A zero-percent discount is replaced with the default 10 percent because zero is falsy.",
+    return {"outcome": "diagnosis", "summary": "A zero-percent discount is replaced with the default 10 percent because zero is falsy.",
             "category": "bug", "priority": "medium",
             "evidence": [{"path": "demo_app/discounts.py", "line_start": 4, "line_end": 5,
                           "finding": "The `or 10` expression replaces both None and 0 with 10. This suggests the reported behavior."}],
             "next_steps": ["Default to 10 only when percent is None, preserving an explicit zero."],
             "verification_steps": ["Assert apply_discount(100, 0) == 100.",
                                    "Assert apply_discount(100, None) == 90 and apply_discount(100, 20) == 80."],
-            "assumptions": ["This is a demonstration fixture; no model or GitHub request was made."]}
+            "assumptions": ["This is a demonstration fixture; no model or GitHub request was made."],
+            "questions": []}
 
 
 class DemoGitHub:

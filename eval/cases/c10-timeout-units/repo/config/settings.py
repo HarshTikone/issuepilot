@@ -1,0 +1,4 @@
+BASE_URL = "https://api.example.invalid"
+RETRY_DELAY_MS = 500
+MAX_RETRIES = 3
+REQUEST_TIMEOUT = 30000

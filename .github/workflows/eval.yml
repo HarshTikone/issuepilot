@@ -1,0 +1,86 @@
+name: Pilot benchmark
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Context given to the agent
+        type: choice
+        options: [retrieval, oracle, all-files]
+        default: retrieval
+      limit:
+        description: Stop after this many new runs (0 means all remaining cases)
+        default: '0'
+      provider:
+        description: Provider name from eval/config.example.json (empty means the first one with a key)
+        default: ''
+  schedule:
+    # Weekly. GitHub can delay scheduled runs and disables them after 60 days without repository activity.
+    - cron: '17 6 * * 1'
+permissions:
+  contents: read
+concurrency:
+  group: pilot-benchmark
+  cancel-in-progress: false
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      MODE: ${{ inputs.mode || 'retrieval' }}
+      LIMIT: ${{ inputs.limit || '0' }}
+      PROVIDER: ${{ inputs.provider || '' }}
+      HERMES_IMAGE: ${{ vars.HERMES_IMAGE }}
+      GROQ: ${{ secrets.GROQ_API_KEY }}
+      GEMINI: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: ready
+        name: Check that a runtime and a key are configured
+        run: |
+          if [ -z "$HERMES_IMAGE" ] || { [ -z "$GROQ" ] && [ -z "$GEMINI" ]; }; then
+            echo "::notice::Set the HERMES_IMAGE repository variable and a GROQ_API_KEY or GEMINI_API_KEY secret to run the benchmark."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Write a private run configuration
+        if: steps.ready.outputs.run == 'true'
+        run: |
+          umask 077
+          : > provider.env
+          if [ -n "$GROQ" ]; then echo "GROQ_API_KEY=$GROQ" >> provider.env; fi
+          if [ -n "$GEMINI" ]; then echo "GEMINI_API_KEY=$GEMINI" >> provider.env; fi
+          python - <<'PY'
+          import json, os
+          cfg = json.load(open("eval/config.example.json"))
+          keys = {line.split("=", 1)[0] for line in open("provider.env") if "=" in line}
+          cfg["providers"] = [p for p in cfg["providers"] if p["key_env"] in keys]
+          cfg.update(hermes_image=os.environ["HERMES_IMAGE"], data_dir="/tmp/issuepilot-eval",
+                     provider_env_file=os.path.abspath("provider.env"))
+          json.dump(cfg, open("eval/config.ci.json", "w"), indent=2)
+          PY
+      - name: Resume this week's partial results
+        if: steps.ready.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: eval/results
+          key: benchmark-${{ env.MODE }}-${{ steps.ready.outputs.week }}-${{ github.run_id }}
+          restore-keys: benchmark-${{ env.MODE }}-${{ steps.ready.outputs.week }}-
+      - if: steps.ready.outputs.run == 'true'
+        run: docker pull "$HERMES_IMAGE"
+      - if: steps.ready.outputs.run == 'true'
+        run: python -m issuepilot --config eval/config.ci.json eval --mode "$MODE" --limit "$LIMIT" --provider "$PROVIDER"
+      - name: Publish the summary
+        if: always() && steps.ready.outputs.run == 'true'
+        run: |
+          for f in eval/results/"$MODE"-*-summary.md; do if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; fi; done
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.ready.outputs.run == 'true'
+        with:
+          name: benchmark-${{ env.MODE }}-${{ github.run_id }}
+          path: eval/results
+          retention-days: 90

@@ -1,0 +1,33 @@
+{
+  "id": "b07-version-compare",
+  "kind": "bug",
+  "issue": {
+    "title": "Updater says 1.9.0 is newer than 1.10.0",
+    "body": "With version 1.10.0 installed, the updater keeps offering 1.9.0 as an update."
+  },
+  "keys": [
+    {
+      "path": "updates/versions.py",
+      "line_start": 2,
+      "line_end": 2,
+      "match": "return candidate > current"
+    },
+    {
+      "path": "updates/checker.py",
+      "line_start": 5,
+      "line_end": 5,
+      "match": "latest = max(releases)"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "string",
+      "lexicograph",
+      "alphabetic",
+      "as text",
+      "tuple",
+      "parse",
+      "character"
+    ]
+  ]
+}

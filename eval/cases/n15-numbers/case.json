@@ -1,0 +1,18 @@
+{
+  "id": "n15-numbers",
+  "kind": "needs_information",
+  "issue": {
+    "title": "Wrong numbers on dashboard",
+    "body": "The numbers look wrong to me."
+  },
+  "question_terms": [
+    "which",
+    "expected",
+    "number",
+    "metric",
+    "example",
+    "value",
+    "date",
+    "screenshot"
+  ]
+}

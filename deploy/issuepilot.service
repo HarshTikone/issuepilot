@@ -1,0 +1,31 @@
+[Unit]
+Description=IssuePilot GitHub investigator powered by Hermes Agent
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=issuepilot
+Group=issuepilot
+SupplementaryGroups=docker
+WorkingDirectory=/opt/issuepilot
+EnvironmentFile=/etc/issuepilot/service.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -m issuepilot --config /etc/issuepilot/config.json run
+ExecStopPost=/usr/bin/python3 -m issuepilot --config /etc/issuepilot/config.json cleanup
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=280
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/issuepilot
+
+[Install]
+WantedBy=multi-user.target

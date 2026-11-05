@@ -69,6 +69,7 @@ def main():
     evaluate.add_argument("--mode", choices=("oracle", "retrieval", "all-files"), required=True)
     evaluate.add_argument("--output", default="eval/results")
     evaluate.add_argument("--limit", type=int, default=0, help="Stop after this many new runs (pacing)")
+    evaluate.add_argument("--provider", default="", help="Provider name from config; default is the first one")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     cfg = Config.load(args.config)
@@ -119,7 +120,8 @@ def main():
                 return
             if args.command == "eval":
                 from .evaluation import run_benchmark
-                summary = run_benchmark(cfg, store, Path(args.cases), args.mode, Path(args.output), args.limit)
+                summary = run_benchmark(cfg, store, Path(args.cases), args.mode, Path(args.output), args.limit,
+                                        provider=args.provider)
                 print(json.dumps(summary, indent=2))
                 return
             if args.command == "status":

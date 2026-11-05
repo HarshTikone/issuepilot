@@ -417,7 +417,7 @@ class BenchmarkTests(Temp):
             return {**fixture_report(), "evidence": [{"path": path, "line_start": 1, "line_end": 1, "finding": "x"}]}
         runner = Mock()
         runner.investigate.side_effect = answer
-        cfg = replace(self.cfg, providers=(GEMINI,))
+        cfg = replace(self.cfg, providers=(GEMINI, GROQ))
         out = self.dir / "results"
         first = run_benchmark(cfg, self.store, CASES, "oracle", out, limit=3, runner=runner)
         self.assertEqual((first["cases"], first["stopped"], first["complete"]), (3, "limit", False))
@@ -426,7 +426,9 @@ class BenchmarkTests(Temp):
         self.assertEqual(second["cases"], 3)
         self.assertTrue(second["stopped"].startswith("quota"))
         self.assertEqual(runner.investigate.call_count, 3)
-        self.assertTrue((out / "oracle-summary.md").exists())
+        self.assertTrue((out / "oracle-gemini-summary.md").exists())
+        with self.assertRaises(ValueError):
+            run_benchmark(cfg, self.store, CASES, "oracle", out, runner=runner, provider="nope")
 
 
 if __name__ == "__main__":

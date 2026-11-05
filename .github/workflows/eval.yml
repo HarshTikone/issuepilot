@@ -10,6 +10,9 @@ on:
       limit:
         description: Stop after this many new runs (0 means all remaining cases)
         default: '0'
+      provider:
+        description: Provider name from eval/config.example.json (empty means the first one with a key)
+        default: ''
   schedule:
     # Weekly. GitHub can delay scheduled runs and disables them after 60 days without repository activity.
     - cron: '17 6 * * 1'
@@ -25,6 +28,7 @@ jobs:
     env:
       MODE: ${{ inputs.mode || 'retrieval' }}
       LIMIT: ${{ inputs.limit || '0' }}
+      PROVIDER: ${{ inputs.provider || '' }}
       HERMES_IMAGE: ${{ vars.HERMES_IMAGE }}
       GROQ: ${{ secrets.GROQ_API_KEY }}
       GEMINI: ${{ secrets.GEMINI_API_KEY }}
@@ -69,11 +73,11 @@ jobs:
       - if: steps.ready.outputs.run == 'true'
         run: docker pull "$HERMES_IMAGE"
       - if: steps.ready.outputs.run == 'true'
-        run: python -m issuepilot --config eval/config.ci.json eval --mode "$MODE" --limit "$LIMIT"
+        run: python -m issuepilot --config eval/config.ci.json eval --mode "$MODE" --limit "$LIMIT" --provider "$PROVIDER"
       - name: Publish the summary
         if: always() && steps.ready.outputs.run == 'true'
         run: |
-          if [ -f "eval/results/$MODE-summary.md" ]; then cat "eval/results/$MODE-summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          for f in eval/results/"$MODE"-*-summary.md; do if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; fi; done
       - uses: actions/upload-artifact@v4
         if: always() && steps.ready.outputs.run == 'true'
         with:

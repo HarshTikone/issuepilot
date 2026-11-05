@@ -17,3 +17,5 @@ var-eval/
 eval/heldout/
 eval/results/
 *.pem
+.coverage
+eval/config.ci.json

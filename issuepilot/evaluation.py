@@ -4,6 +4,7 @@ import json
 import subprocess
 import tempfile
 import time
+from dataclasses import replace
 from pathlib import Path
 
 from .agent import PROMPT, HermesDocker
@@ -112,10 +113,17 @@ def markdown(summary, finished_at):
     return "\n".join(lines) + "\n"
 
 
-def run_benchmark(cfg, store, cases_dir, mode, output, limit=0, runner=None):
-    """Resumable: finished cases are kept in a JSONL file and skipped on the next run."""
+def run_benchmark(cfg, store, cases_dir, mode, output, limit=0, runner=None, provider=""):
+    """Resumable: finished cases are kept in a JSONL file and skipped on the next run.
+
+    One provider per run, with no fallback, so every row in a mode comes from the same model.
+    """
+    specs = [s for s in cfg.routes if s.name == (provider or cfg.routes[0].name)]
+    if not specs:
+        raise ValueError("Unknown provider name")
+    cfg = replace(cfg, providers=tuple(specs))
     output.mkdir(parents=True, exist_ok=True)
-    results = output / f"{mode}.jsonl"
+    results = output / f"{mode}-{specs[0].name}.jsonl"
     done = {}
     if results.exists():
         for line in results.read_text(encoding="utf-8").splitlines():
@@ -155,7 +163,8 @@ def run_benchmark(cfg, store, cases_dir, mode, output, limit=0, runner=None):
     summary["complete"] = len(rows) == len(load_cases(cases_dir))
     summary["stopped"] = stopped
     finished = time.time()
-    (output / f"{mode}-summary.json").write_text(json.dumps({**summary, "finished_at": finished}, indent=2) + "\n",
+    stem = f"{mode}-{specs[0].name}"
+    (output / f"{stem}-summary.json").write_text(json.dumps({**summary, "finished_at": finished}, indent=2) + "\n",
                                                  encoding="utf-8")
-    (output / f"{mode}-summary.md").write_text(markdown(summary, finished), encoding="utf-8")
+    (output / f"{stem}-summary.md").write_text(markdown(summary, finished), encoding="utf-8")
     return summary

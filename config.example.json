@@ -1,0 +1,17 @@
+{
+  "repo": "HarshTikone/issuepilot",
+  "branch": "main",
+  "label": "agent-ready",
+  "allowed_authors": ["HarshTikone"],
+  "context_paths": ["demo_app/discounts.py"],
+  "data_dir": "var",
+  "hermes_image": "REPLACE_WITH_OFFICIAL_IMAGE_DIGEST",
+  "provider": "openrouter",
+  "model": "REPLACE_WITH_A_TOOL_CAPABLE_MODEL_ID",
+  "provider_env_file": "provider.env",
+  "poll_seconds": 60,
+  "timeout_seconds": 240,
+  "max_attempts": 3,
+  "max_jobs_per_day": 10,
+  "health_port": 8787
+}

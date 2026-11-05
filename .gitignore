@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+config.json
+provider.env
+service.env
+var/
+demo-output/
+evidence*.json
+*.sqlite3*
+# Local portfolio notes and the earlier personal implementation plan.
+/docs/EVIDENCE.md
+/docs/IMPLEMENTATION_PLAN.md

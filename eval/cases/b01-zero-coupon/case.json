@@ -1,0 +1,26 @@
+{
+  "id": "b01-zero-coupon",
+  "kind": "bug",
+  "issue": {
+    "title": "Coupon worth 0% still takes 10% off",
+    "body": "Applying a coupon worth 0 percent to a $50 cart charges $45. A zero-percent coupon should leave the total unchanged."
+  },
+  "keys": [
+    {
+      "path": "shop/pricing.py",
+      "line_start": 5,
+      "line_end": 5,
+      "match": "percent = percent or 10"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "falsy",
+      "or 10",
+      "is none",
+      "false",
+      "zero is treated",
+      "0 is treated"
+    ]
+  ]
+}

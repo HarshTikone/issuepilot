@@ -1,0 +1,22 @@
+{
+  "repo": "HarshTikone/issuepilot",
+  "branch": "main",
+  "label": "agent-ready",
+  "allowed_authors": ["HarshTikone"],
+  "context_paths": [],
+  "retrieval": true,
+  "retrieval_max_files": 3,
+  "data_dir": "../var-eval",
+  "hermes_image": "REPLACE_WITH_OFFICIAL_IMAGE_DIGEST",
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "provider_env_file": "../provider.env",
+  "providers": [
+    {"name": "groq", "hermes_provider": "custom", "model": "openai/gpt-oss-120b", "key_env": "GROQ_API_KEY",
+     "base_url": "https://api.groq.com/openai/v1",
+     "rpm": 30, "rpd": 1000, "tpm": 8000, "tpd": 200000, "max_input_tokens": 0, "max_turns": 4},
+    {"name": "gemini", "hermes_provider": "gemini", "model": "gemini-2.5-flash", "key_env": "GEMINI_API_KEY",
+     "rpm": 0, "rpd": 0, "tpm": 0, "tpd": 0, "max_input_tokens": 0, "max_turns": 4}
+  ],
+  "timeout_seconds": 240
+}

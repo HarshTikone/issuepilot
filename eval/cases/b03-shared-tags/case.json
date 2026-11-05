@@ -1,0 +1,26 @@
+{
+  "id": "b03-shared-tags",
+  "kind": "bug",
+  "issue": {
+    "title": "New notes show tags from other notes",
+    "body": "I create a note and tag it 'work', then create a second note and tag it 'home'. The second note shows both work and home."
+  },
+  "keys": [
+    {
+      "path": "notes/tags.py",
+      "line_start": 1,
+      "line_end": 3,
+      "match": "def add_tag(note, tag, tags=[]):"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "mutable default",
+      "default list",
+      "shared list",
+      "tags=[]",
+      "default argument",
+      "same list"
+    ]
+  ]
+}

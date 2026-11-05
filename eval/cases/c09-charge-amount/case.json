@@ -1,0 +1,26 @@
+{
+  "id": "c09-charge-amount",
+  "kind": "bug",
+  "issue": {
+    "title": "POST /charges bills 100 times the amount",
+    "body": "Submitting amount '12.50' through the charges endpoint charged the customer $1250.00."
+  },
+  "keys": [
+    {
+      "path": "payments/parsing.py",
+      "line_start": 2,
+      "line_end": 2,
+      "match": "cleaned = text.strip()"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "decimal",
+      "period",
+      "dot",
+      "point",
+      "\".\"",
+      "'.'"
+    ]
+  ]
+}

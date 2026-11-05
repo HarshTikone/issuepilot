@@ -1,0 +1,26 @@
+{
+  "id": "b04-adult-boundary",
+  "kind": "bug",
+  "issue": {
+    "title": "18-year-olds cannot sign up",
+    "body": "Users who are exactly 18 years old get the message 'You must be an adult to sign up'."
+  },
+  "keys": [
+    {
+      "path": "signup/validation.py",
+      "line_start": 6,
+      "line_end": 6,
+      "match": "return age > MIN_AGE"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      ">=",
+      "greater than or equal",
+      "at least",
+      "inclusive",
+      "strictly greater",
+      "boundary"
+    ]
+  ]
+}

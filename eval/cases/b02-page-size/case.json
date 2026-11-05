@@ -1,0 +1,26 @@
+{
+  "id": "b02-page-size",
+  "kind": "bug",
+  "issue": {
+    "title": "Each page of /users shows 19 users instead of 20",
+    "body": "With 45 users, page 1 shows 19 entries and user number 20 never appears on any page."
+  },
+  "keys": [
+    {
+      "path": "api/pagination.py",
+      "line_start": 3,
+      "line_end": 4,
+      "match": "end = start + size - 1"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "off-by-one",
+      "off by one",
+      "exclusive",
+      "- 1",
+      "minus one",
+      "one fewer"
+    ]
+  ]
+}

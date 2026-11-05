@@ -1,0 +1,19 @@
+{
+  "id": "n14-export",
+  "kind": "needs_information",
+  "issue": {
+    "title": "Export is broken",
+    "body": "Export doesn't work anymore."
+  },
+  "question_terms": [
+    "error",
+    "message",
+    "steps",
+    "reproduce",
+    "which",
+    "format",
+    "expected",
+    "what happens",
+    "version"
+  ]
+}

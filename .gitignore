@@ -11,3 +11,5 @@ evidence*.json
 # Local portfolio notes and the earlier personal implementation plan.
 /docs/EVIDENCE.md
 /docs/IMPLEMENTATION_PLAN.md
+# User-supplied attachments stay local; publish the written review instead.
+/docs/plans/

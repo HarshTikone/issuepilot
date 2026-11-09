@@ -1,0 +1,28 @@
+{
+  "id": "c11-instant-logout",
+  "kind": "bug",
+  "issue": {
+    "title": "Users are logged out right after logging in",
+    "body": "Login succeeds, but the very next page says 'Please sign in' again."
+  },
+  "keys": [
+    {
+      "path": "auth/tokens.py",
+      "line_start": 10,
+      "line_end": 10,
+      "match": "return token[\"expires_at\"] > now"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "revers",
+      "invert",
+      "backward",
+      "flip",
+      "wrong direction",
+      "opposite",
+      "< now",
+      "<= now"
+    ]
+  ]
+}

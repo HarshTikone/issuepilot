@@ -1,78 +1,63 @@
 # IssuePilot roadmap
 
-The current implementation provides a durable issue queue, a Docker adapter for Hermes, strict report validation, a simulated demo and Ubuntu service tooling. Forty automated checks pass locally. Live model execution, Linux deployment and the GitHub App integration still need verification.
+The code for milestones 1 to 5 is in place and unit-tested (74 tests, 87% line coverage). What remains needs your own accounts: a live model run, a free Linux server, a GitHub App installation and a measured benchmark. Those steps are in [GO_LIVE.md](GO_LIVE.md). [The design notes](DESIGN_NOTES.md) explain each decision.
 
-The next release targets published free allowances. It does not promise uninterrupted free hosting. [The upgrade-plan review](UPGRADE_PLAN_REVIEW.md) records the integration and evaluation changes needed before implementation.
+The release targets published free allowances. It does not promise uninterrupted free hosting.
 
 ## 1. Publish and establish the baseline
 
-- [ ] Publish the source, tests, deployment tools and documentation as separate commits.
-- [ ] Verify the Windows and Ubuntu CI jobs in the actual repository.
-- [ ] Record the application commit and local validation results.
-- [ ] Keep simulated output visibly distinct from live investigations.
-
-Completion: a reviewer can clone the project, run the tests and reproduce the offline demo.
+- [x] Publish the source, tests, deployment tools and documentation.
+- [x] Windows and Ubuntu CI on Python 3.10 and 3.12, plus lint and a coverage floor.
+- [x] Package metadata, console command and MIT license.
+- [x] Keep simulated output visibly distinct from live investigations.
 
 ## 2. Prove one free inference provider
 
-- [ ] Introduce a typed investigator result with provider/model, usage, timing and error category.
-- [ ] Resolve custom-endpoint configuration without relying on a file ignored by Hermes safe mode.
-- [ ] Smoke-test Groq against an exact Hermes image digest and a tool-capable model available to the account.
-- [ ] Record each inference request and reserve request/token quota before issuing it.
-- [ ] Bound tool turns, output length, retries and provider fallback; respect quota reset times.
-- [ ] Add Gemini/OpenRouter only after the first provider path works.
-
-Completion: one real investigation returns a validated report, its actual model usage is recorded, and exhausted quotas cause a controlled wait or failure.
+- [x] Typed investigator result with provider, model, timing and attempt log; typed errors with category and retry delay.
+- [x] Custom endpoints through explicit `--base-url` launch settings, with the key kept off the host command line.
+- [x] Reserve requests and tokens per provider before each run; skip providers whose per-request ceiling the snapshot exceeds.
+- [x] Bound tool turns, retries and fallback; cool down a provider until its reset; defer jobs without spending attempts.
+- [ ] **Live:** smoke-test Gemini and Groq on the pinned Hermes digest (`smoke-agent --provider NAME`).
 
 ## 3. Deploy the investigator
 
-- [ ] Provision an Always Free Oracle instance if capacity is available; verify the account's current allowance.
-- [ ] SSH into Ubuntu and check the pinned ARM image on the actual server.
-- [ ] Implement GitHub App installation authentication, token refresh and bot actor identification.
-- [ ] Configure the repository installation, issue author policy and work label.
-- [ ] Start the systemd service and observe automatic pickup of a new issue.
-- [ ] Check restart, forced-process termination and reboot recovery.
-- [ ] Add heartbeat and job-failure monitoring, then test a consistent database backup/restore.
-
-Completion: an already-running service handles real issues without manual agent commands, and the resulting comments link to the source revision inspected. Measure discovery, queue and execution time separately.
+- [x] GitHub App installation tokens with refresh and bot identity; personal-token mode kept as a fallback.
+- [x] Consistent online backup, checked restore, queue-age and failure health signals, optional heartbeat.
+- [x] Setup wizard and guide for Oracle Always Free, free model keys and App mode.
+- [ ] **Live:** provision the server, check the arm64 image, install the App and start the service.
+- [ ] **Live:** observe automatic pickup of a new issue; test restart, `kill -9` and reboot recovery; restore a backup once.
+- [ ] **Live:** record discovery, queue and model time separately for the first issues.
 
 ## 4. Retrieve source context
 
-- [ ] Fetch and validate repository-tree metadata at one commit; handle truncation.
-- [ ] Fetch bounded candidate contents and cache them by blob SHA.
-- [ ] Rank paths and text with a lexical index before asking the model for additional files.
-- [ ] Enforce file, byte and token budgets for every retrieval round.
-- [ ] Reject untrusted paths, symlinks, submodules, binary/generated/vendor files and sensitive files.
-- [ ] Record the selected files and revision for reproducibility.
-
-Completion: retrieval finds the relevant source on distinct cross-file issues without a hand-picked file list. The report can cite only files actually retrieved.
+- [x] Filter tree metadata at one commit; fail on truncation.
+- [x] Fetch at most 40 candidates through a cache keyed and verified by Git blob SHA.
+- [x] Rank with BM25, path matches and import links; enforce file, byte and token budgets.
+- [x] Reject symlinks, submodules, hidden, vendor, generated, binary, secret-like and oversized files.
+- [x] Record the selected files and scores on each job.
+- [ ] Let the model request additional files, subject to the same checks.
 
 ## 5. Run a pilot benchmark
 
-- [ ] Define separate bug, insufficient-information and injection outcomes.
-- [ ] Update the schema so a justified request for information can have zero source citations.
-- [ ] Score root-cause explanations and short citation spans separately.
-- [ ] Keep answer keys outside agent inputs and use synthetic injection canaries.
-- [ ] Compare oracle-context, retrieved-context and all-files baselines using the same model and budget rules.
-- [ ] Keep a genuinely held-out set, publish sanitized per-case results and record runtime/model/prompt versions.
-- [ ] Pace runs within the shared serving/evaluation quota and support resuming partial runs.
-- [ ] Add a manual evaluation trigger and a results-freshness indicator.
+- [x] Separate bug, needs-information and injection cases (12, 4 and 4), with answer keys outside agent input.
+- [x] `needs_information` outcome with zero citations allowed; short citation spans required.
+- [x] Score citation hits, right file, diagnosis terms, abstention, useful questions and injection resistance separately.
+- [x] Oracle-context, retrieval and all-files modes with the same router and budget rules.
+- [x] Resumable runs that share the serving quota ledger; manual and weekly workflow with dated summaries.
+- [ ] **Live:** run all three modes and publish the per-case results with model, image digest and prompt ID.
+- [ ] Write 5 held-out cases privately in `eval/heldout/` and run them once, after tuning is finished.
 
-Completion: publish measured outcomes with explicit denominators. A baseline may outperform the agent; report the result. Twenty small cases are a pilot, not a general reliability guarantee.
+The cases are small (2–4 files), so retrieval mode is nearly the same as all-files. Treat results as a pilot, not a reliability estimate. If a baseline beats the agent, publish that.
 
-## 6. Add restricted draft PRs
+## 6. Add restricted draft PRs (optional)
 
-- [ ] Grant the supervisor Contents write and Pull requests write only when this feature is enabled.
+- [ ] Grant Contents write and Pull requests write to the supervisor only when this feature is enabled.
 - [ ] Validate patch paths, modes and size against an exact base commit.
 - [ ] Keep trusted tests and commands outside model-writable paths.
-- [ ] Use a prebuilt dependency image in a non-root, network-disabled, resource-limited runner without credentials or a Docker socket.
-- [ ] Require regression tests to fail on the base and pass on the patch.
-- [ ] Check the exact proposed commit and handle base-branch movement.
-- [ ] Reconcile branch/PR creation after ambiguous responses.
-- [ ] Publish bounded, redacted diagnostics when checks fail.
-
-Completion: an eligible issue produces a draft PR with verified checks and human review required before merge. This phase is optional until the live investigator and evaluation work.
+- [ ] Run tests in a prebuilt, non-root, network-disabled, resource-limited runner without credentials or a Docker socket.
+- [ ] Require regression tests to fail on the base and pass on the patch, on the exact proposed commit.
+- [ ] Reconcile branch and PR creation after ambiguous responses; publish only bounded, redacted diagnostics.
 
 ## Release evidence
 
-Publish real issue/comment links, the checked source commit, runtime digest, sanitized evaluation results and a short operating demo. State measured uptime and costs with a date range. Describe duplicate handling as durable retries with reconciliation; external GitHub writes are not guaranteed to occur exactly once.
+Publish real issue and comment links, the checked source commit, runtime digest, sanitized benchmark results and a short demo. State measured uptime and cost with a date range. Describe duplicate handling as durable retries with reconciliation; external GitHub writes are not guaranteed to happen exactly once.

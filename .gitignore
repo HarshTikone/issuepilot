@@ -13,3 +13,9 @@ evidence*.json
 /docs/IMPLEMENTATION_PLAN.md
 # User-supplied attachments stay local; publish the written review instead.
 /docs/plans/
+var-eval/
+eval/heldout/
+eval/results/
+*.pem
+.coverage
+eval/config.ci.json

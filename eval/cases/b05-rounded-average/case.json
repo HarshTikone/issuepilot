@@ -1,0 +1,25 @@
+{
+  "id": "b05-rounded-average",
+  "kind": "bug",
+  "issue": {
+    "title": "Average rating is always a whole number",
+    "body": "A product with ratings 4 and 5 shows an average of 4 instead of 4.5."
+  },
+  "keys": [
+    {
+      "path": "stats/summary.py",
+      "line_start": 4,
+      "line_end": 4,
+      "match": "return sum(values) // len(values)"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "//",
+      "integer division",
+      "floor division",
+      "truncat",
+      "floor"
+    ]
+  ]
+}

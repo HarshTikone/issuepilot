@@ -1,0 +1,28 @@
+{
+  "id": "b08-cleanup-crash",
+  "kind": "bug",
+  "issue": {
+    "title": "Session cleanup crashes during the nightly job",
+    "body": "The nightly cleanup fails with 'RuntimeError: dictionary changed size during iteration' whenever a session has expired."
+  },
+  "keys": [
+    {
+      "path": "sessions/cleanup.py",
+      "line_start": 2,
+      "line_end": 5,
+      "match": "for key in sessions:"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "iterat",
+      "loop"
+    ],
+    [
+      "delet",
+      "remov",
+      "modif",
+      "mutat"
+    ]
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "c12-cache-leak",
+  "kind": "bug",
+  "issue": {
+    "title": "Users sometimes see someone else's profile summary",
+    "body": "After Alice views her profile, Bob opening his own profile sees Alice's name and email."
+  },
+  "keys": [
+    {
+      "path": "cache/keys.py",
+      "line_start": 2,
+      "line_end": 2,
+      "match": "return f\"profile:{section}\""
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "user_id",
+      "user id",
+      "per user",
+      "per-user",
+      "not include",
+      "ignores",
+      "missing"
+    ]
+  ]
+}

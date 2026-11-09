@@ -46,17 +46,18 @@ Get-Content "$env:USERPROFILE\.ssh\issuepilot_ed25519.pub"
 
 The `.pub` file can be uploaded to your VPS provider. The file without `.pub` is private: keep it on your computer. This uses the standard OpenSSH key workflow documented by [DigitalOcean](https://docs.digitalocean.com/products/droplets/how-to/add-ssh-keys/create-with-openssh/).
 
-## 3. Rent a Linux VPS
+## 3. Create a free Linux server
 
-One straightforward option is a [DigitalOcean Droplet](https://docs.digitalocean.com/products/droplets/how-to/create/). Another provider is fine if it gives you an Ubuntu server and SSH access.
+The free path is an [Oracle Cloud Always Free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) Ampere A1 instance. Its documentation lists 2 OCPUs and 12GB of memory for A1 in total. Read the current page before you create anything, because the allowance has changed before.
 
-Choose Ubuntu **24.04 LTS**, regular shared CPU, and a region near you. Start with **2 vCPU, 4GB RAM and at least 40GB disk** if it fits your budget. This is a starting recommendation, not a measured minimum. The model runs at an API provider, so you do not need a GPU.
+- Choose your home region carefully at sign-up; it cannot be changed later. Arm capacity is sometimes unavailable, so retry later if creation fails.
+- Create one **VM.Standard.A1.Flex** instance with Ubuntu 24.04 (aarch64), at most 2 OCPUs and 12GB, and a boot volume within the free storage allowance.
+- Oracle documents that idle Always Free instances can be reclaimed. Do not generate artificial load to avoid this. Keep the setup reproducible and back up the job database (see Routine operation).
+- Upload the public key from step 2. In the subnet's security list, allow inbound TCP 22 **only from your current public IP**. No other inbound port is needed.
 
-Select SSH-key authentication and paste the public key from step 2. Name the server `issuepilot`. Review the recurring price before creating it and set a billing alert. Consult [current provider pricing](https://docs.digitalocean.com/products/droplets/details/pricing/); this guide does not quote a fixed plan price.
+A paid VPS such as a [DigitalOcean Droplet](https://docs.digitalocean.com/products/droplets/how-to/create/) works the same way if Oracle capacity is unavailable. Review its price and set a billing alert first.
 
-In the provider's cloud firewall, allow inbound TCP port 22 **only from your current public IP**. This project needs no other inbound app ports. If your IP changes, update the firewall source rule.
-
-The control panel will give you an address such as `203.0.113.10`. The address here is an example; use your actual server IP.
+Oracle's default login user for Ubuntu images is `ubuntu`, not `root`. The control panel shows the public address; use it as `YOUR_SERVER_IP`.
 
 ## 4. Log in over SSH yourself
 
@@ -64,7 +65,7 @@ In local PowerShell:
 
 ```powershell
 $issuepilotServer = "YOUR_SERVER_IP"
-ssh -i "$env:USERPROFILE\.ssh\issuepilot_ed25519" "root@$issuepilotServer"
+ssh -i "$env:USERPROFILE\.ssh\issuepilot_ed25519" "ubuntu@$issuepilotServer"
 ```
 
 On the first connection, verify the host-key fingerprint through your provider's trusted console or documented fingerprint procedure before accepting it. Enter your key passphrase when prompted.
@@ -87,7 +88,7 @@ The commands from here through step 10 run **inside the SSH session**.
 ```bash
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y git python3 ca-certificates curl
+sudo apt-get install -y git python3 python3-cryptography ca-certificates curl
 ```
 
 Install Docker Engine using [Docker's official Ubuntu apt-repository instructions](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository). Use the repository installation rather than downloading an unrelated setup script. Then verify:
@@ -108,8 +109,11 @@ cd /opt/issuepilot
 python3 -m unittest discover -s tests -v
 sudo docker pull nousresearch/hermes-agent:stable
 sudo docker image inspect nousresearch/hermes-agent:stable --format '{{index .RepoDigests 0}}'
+sudo docker image inspect nousresearch/hermes-agent:stable --format '{{.Architecture}}'
 sudo docker run --rm nousresearch/hermes-agent:stable --version
 ```
+
+On Oracle's Arm server the architecture must print `arm64`. If the image has no arm64 build, stop here: use an x86 server or build Hermes from source, and record that change.
 
 The [official Hermes Docker documentation](https://hermes-agent.nousresearch.com/docs/user-guide/docker) provides this image family. Its stable tag can change; the setup wizard records the exact downloaded digest for IssuePilot's task executions. Save the printed version and digest.
 
@@ -117,7 +121,7 @@ If you choose a private repository, clone using your normal GitHub SSH/deploy-ke
 
 ## 6. Create scoped runtime credentials
 
-In GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens, create an expiring token for **only `HarshTikone/issuepilot`**:
+**GitHub identity (recommended: a GitHub App).** In GitHub Settings → Developer settings → GitHub Apps, create an App with no webhook and these repository permissions:
 
 | Repository permission | Access |
 |---|---|
@@ -125,27 +129,39 @@ In GitHub Settings → Developer settings → Personal access tokens → Fine-gr
 | Issues | Read and write |
 | Metadata | Read-only, automatically included |
 
-You do not need Actions write, workflow, administration, or Contents write. This version uses a personal account identity; the comment will appear under the token owner's account. A GitHub App bot is an improvement for later. See [GitHub's token documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) and [comment creation permissions](https://docs.github.com/en/rest/issues/comments#create-an-issue-comment).
+Install it on **only `HarshTikone/issuepilot`**. Note the App ID and the installation ID (the number at the end of the installation's settings URL), then generate a private key. Copy the `.pem` file to the server as `/etc/issuepilot/app.pem` after step 7's install script creates that folder:
 
-Create an OpenRouter API key, configure a small spending limit in the provider account/key settings, and copy the exact ID of a tool-capable model that your account can use. The setup wizard uses OpenRouter for a concrete first path; the adapter can use another Hermes-supported API-key provider after updating configuration and the provider environment variable.
+```bash
+sudo install -o root -g issuepilot -m 0640 app.pem /etc/issuepilot/app.pem && rm app.pem
+```
 
-Keep both keys in your password manager while setting up. Do not paste them into this chat, issues, commits, screenshots or terminal commands.
+IssuePilot requests a one-hour installation token scoped to this repository and refreshes it before expiry. Comments appear as `your-app-name[bot]`. See [installation tokens](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app).
+
+The fallback is an expiring fine-grained personal token for only this repository with the same permissions. Comments then appear under your account.
+
+**Model keys (free tiers).** Create a key in [Google AI Studio](https://aistudio.google.com/) for Gemini and, optionally, a key in the [Groq console](https://console.groq.com/). Check each account's current rate limits: Gemini shows them on the AI Studio rate-limit page, and Groq on its limits page. Copy those numbers into `rpm`, `rpd`, `tpm` and `tpd` in the config so IssuePilot reserves budget before each run. Free-tier prompts may be used to improve the provider's products, so only use repositories whose code you are willing to share.
+
+Groq's free plan allows about 8,000 tokens per minute. A full 60KB snapshot cannot fit in one minute's allowance, so IssuePilot skips Groq for large snapshots and tries the next provider. Keep Gemini first for live issues.
+
+Keep the keys in your password manager while setting up. Do not paste them into chat, issues, commits, screenshots or terminal commands.
 
 ## 7. Install and configure IssuePilot
 
 ```bash
 cd /opt/issuepilot
 sudo bash deploy/install-service.sh
+# App mode only: copy the private key now (see step 6), then run the wizard.
 sudo python3 deploy/configure.py
 ```
 
-The wizard asks for the model ID, GitHub token and model API key. Key input is hidden and not stored in shell history. It creates:
+The wizard asks for your model keys and model IDs, and for either the GitHub App IDs or a token. Key input is hidden and not stored in shell history. It creates:
 
 | File | Purpose |
 |---|---|
 | `/etc/issuepilot/config.json` | Repository, model, pinned image, source paths and limits |
 | `/etc/issuepilot/provider.env` | Model key only; readable by the service account |
-| `/etc/issuepilot/service.env` | GitHub token; read by systemd as root |
+| `/etc/issuepilot/service.env` | GitHub token in token mode; empty in App mode |
+| `/etc/issuepilot/app.pem` | GitHub App private key in App mode |
 | `/var/lib/issuepilot/` | Private durable job database and temporary source snapshots |
 
 The service account is a member of the Docker group. This gives the trusted supervisor substantial host authority; run this on a dedicated project VPS. The model's task container never receives that group membership or the Docker socket. See `SECURITY.md`.
@@ -156,7 +172,8 @@ The wizard refuses to overwrite existing configuration. Use `sudoedit /etc/issue
 
 ```bash
 sudo bash deploy/admin.sh check
-sudo bash deploy/admin.sh smoke-agent
+sudo bash deploy/admin.sh smoke-agent --provider gemini
+sudo bash deploy/admin.sh smoke-agent --provider groq
 ```
 
 `check` verifies read access, source paths and the local pinned image. It cannot establish model execution or GitHub comment-write permission.
@@ -164,12 +181,14 @@ sudo bash deploy/admin.sh smoke-agent
 `smoke-agent` spends model credit and asks **real Hermes** to read the sample files and investigate the bug. It posts nothing to GitHub. Inspect the result privately:
 
 ```bash
-sudo -u issuepilot python3 -m json.tool /var/lib/issuepilot/hermes-smoke-report.json
+sudo -u issuepilot python3 -m json.tool /var/lib/issuepilot/hermes-smoke-gemini.json
 ```
 
 Verify that it explains why an explicit zero becomes ten and cites the relevant source lines. Save this as your first real Hermes task evidence.
 
 The adapter uses the official image's `/opt/hermes/.venv/bin/hermes` binary for an isolated non-root one-shot invocation, bypassing desktop/gateway initialization. This is a compatibility point that must be tested with your selected digest. If the smoke check fails, keep the service stopped; inspect the pinned image's `--help`, provider/model settings, and binary path. Never replace a failed real invocation with the demo fixture.
+
+Two launch details are untested until this step and must be checked on your pinned image. Groq runs through Hermes's `custom` provider with `--base-url`, and the key is passed as `--api-key` by `/bin/sh` inside the container, so the image must include a shell. The `--max-turns` flag bounds tool turns. If the image rejects `--max-turns`, set `"max_turns": 0` for that provider; IssuePilot then omits the flag and reserves budget for 8 turns. `sudo bash deploy/admin.sh usage` shows what was reserved.
 
 ## 9. Start the service and prove automatic pickup
 
@@ -256,7 +275,15 @@ sudo bash /opt/issuepilot/deploy/admin.sh export --output /var/lib/issuepilot/ev
 
 Inspect and redact exported files before sharing them. This export alone does not prove the live workflow: verify the external comment and your SSH deployment evidence too.
 
-**Backup:** stop the service before copying `/var/lib/issuepilot/jobs.sqlite3` to a private backup location, then restart it. Test restores on a separate data directory. Keep the same scoped account identity for comment reconciliation.
+**Backup:** the `backup` command makes a consistent copy through SQLite's online backup API and checks its integrity, so the service can keep running:
+
+```bash
+sudo bash /opt/issuepilot/deploy/admin.sh backup --output /var/lib/issuepilot/backups/jobs-$(date +%F).sqlite3
+```
+
+The backup holds issue text and reports but no keys. Keep it private, encrypt it before it leaves the server, and delete old copies. To restore, stop the service, move the old `jobs.sqlite3` aside, then run `admin.sh restore PATH` and start the service. Practise this once. Keep the same GitHub identity so comment reconciliation still recognizes earlier reports.
+
+**Monitoring:** set `heartbeat_url` to a free [Healthchecks.io](https://healthchecks.io/) check URL. The worker pings it after each cycle and pings `/fail` when GitHub polling fails or a job newly fails. Set the check's grace period above `poll_seconds + timeout_seconds`. `/readyz` also shows the oldest queued job's age and the failed-job count.
 
 **Update or roll back:** stop the service, record the application commit and configured image digest, fetch the desired reviewed code version, run checks and the real smoke task, then start. To roll back, select the previously recorded application commit and image digest. Database schema migrations beyond this version must have an explicit backup/restore plan.
 
@@ -269,6 +296,9 @@ Inspect and redact exported files before sharing them. This export alone does no
 | GitHub 404/403 | Repository exists; token selected the correct repository; permissions and expiry |
 | No issue picked up | Open issue, exact label, allowlisted author, healthy service, daily call limit |
 | `RuntimeError` from model task | Real image smoke compatibility, model ID, available credit, tool capability, memory |
+| `InvestigatorError:quota` or "Waiting for provider quota" | The provider returned a rate-limit error or the reserved daily budget is used; the job waits without spending an attempt. Check `usage` |
+| `ContextTooLarge` | No provider accepts the snapshot; lower `retrieval_max_files` or the pinned files |
+| `InvestigatorError:auth` | Wrong or revoked model key; the provider is paused for 24 hours |
 | `JSONDecodeError` / `ValueError` task failure | Model output did not meet strict schema, cited invalid context or triggered credential filtering |
 | `TimeoutExpired` | Provider latency, image startup behavior or resource pressure; inspect server memory and run smoke check |
 | Worker already owns directory | Continuous service is running; stop it before `retry`, `run --once` or `smoke-agent` |

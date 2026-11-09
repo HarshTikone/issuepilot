@@ -1,0 +1,20 @@
+{
+  "id": "n13-slow",
+  "kind": "needs_information",
+  "issue": {
+    "title": "App is slow sometimes",
+    "body": "It's slow. Please fix."
+  },
+  "question_terms": [
+    "steps",
+    "reproduce",
+    "which",
+    "when",
+    "how slow",
+    "timing",
+    "measure",
+    "page",
+    "endpoint",
+    "example"
+  ]
+}

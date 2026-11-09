@@ -1,0 +1,27 @@
+{
+  "id": "b06-missing-last-day",
+  "kind": "bug",
+  "issue": {
+    "title": "Monthly report misses the last day",
+    "body": "Running the daily report from March 1 to March 31 lists only 30 days. March 31 is missing."
+  },
+  "keys": [
+    {
+      "path": "booking/dates.py",
+      "line_start": 10,
+      "line_end": 10,
+      "match": "for offset in range((end - start).days):"
+    }
+  ],
+  "diagnosis_terms": [
+    [
+      "inclusive",
+      "+ 1",
+      "+1",
+      "exclusive",
+      "off-by-one",
+      "off by one",
+      "last day"
+    ]
+  ]
+}
